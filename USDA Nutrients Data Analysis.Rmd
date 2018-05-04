@@ -1,0 +1,171 @@
+---
+title: "Assignment  CMTH642"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+# 1. Read the csv files in the folder
+Mac<-read.csv("C:/Users/Tej/Documents/USDA_Macronutrients.csv",na.strings = c("","NA"),header=TRUE)
+Mic<-read.csv("C:/Users/Tej/Documents/USDA_Micronutrients.csv",na.strings = c("","NA"),header=TRUE)
+```
+```{r}
+#2. Merge the data frames using the variable "ID". Name the Merged Data Frame "USDA"
+USDA<-merge(Mac,Mic,by="ID")
+```
+```{r}
+# 3.Prepare the dataset for analysis
+str(USDA)
+# Removing commas from Sodium Column and converting it to numeric
+USDA$Sodium=gsub(",","",USDA$Sodium,fixed=TRUE)
+USDA$Sodium<-as.numeric(USDA$Sodium)
+# Removing commas from Potassium Column and converting it to numeric
+USDA$Potassium=gsub(",","",USDA$Potassium,fixed=TRUE)
+USDA$Potassium<-as.numeric(USDA$Potassium) 
+# Converting Description to character
+USDA$Description<-as.character(USDA$Description)
+
+```
+```{r}
+# 4.Remove records with missing values in 4 or more vectors
+USDA<-USDA[rowSums(is.na(USDA)) < 4,]
+
+```
+```{r}
+# 5.How many records remain in the data frame?
+nrow(USDA)
+```
+```{r}
+# 6. For records with missing values for Sugar, Vitamin E and Vitamin D, replace missing values with mean value for the respective vector
+mean.Sugar<-mean(USDA$Sugar,na.rm=T)
+mean.VitaminE<-mean(USDA$VitaminE,na.rm=T)
+mean.VitaminD<-mean(USDA$VitaminD,na.rm=T)
+USDA$Sugar[is.na(USDA$Sugar)]=mean.Sugar
+USDA$VitaminE[is.na(USDA$VitaminE)]=mean.VitaminE
+USDA$VitaminD[is.na(USDA$VitaminD)]=mean.VitaminD
+```
+```{r}
+# 7. With a single line of code, remove all remaining records with missing values. Name the new Data Frame "USDAclean".
+USDAclean<-na.omit(USDA)
+```
+```{r}
+# 8. How many records remain in the data frame?
+nrow(USDAclean)
+```
+```{r}
+# 9. Which food has the highest sodium level?
+USDAclean$Description[which.max(USDAclean$Sodium)]
+```
+```{r}
+# 10. Create a scatter plot using Protein and Fat, with the plot title "Fat vs Protein", labeling the axes "Fat" and "Protein", and making the data points red.
+plot(USDAclean$TotalFat,USDAclean$Protein,xlab="Fat",ylab="Protein",main="Fat vs Protein",col="red")
+```
+```{r}
+# 11. Create a histogram of Vitamin C distribution in foods, with a limit of 0 to 100 on the x-axis and breaks of 100
+hist(USDAclean$VitaminC,xlim=c(0,100), breaks=100)
+```
+```{r}
+# 12. Add a new variable to the data frame that takes value 1 if the food has higher sodium than average, 0 otherwise. Call this variable HighSodium.
+USDAclean$HighSodium<-NA
+USDAclean$HighSodium[USDAclean$Sodium>mean(USDAclean$Sodium)]=1
+USDAclean$HighSodium[USDAclean$Sodium<mean(USDAclean$Sodium)]=0
+```
+```{r}
+# 13. Do the same for HighCalories, HighProtein, HighSugar, and HighFat
+USDAclean$HighCalories<-NA
+USDAclean$HighCalories[USDAclean$Calories>mean(USDAclean$Calories)]=1
+USDAclean$HighCalories[USDAclean$Calories<mean(USDAclean$Calories)]=0
+USDAclean$HighProtein<-NA
+USDAclean$HighProtein[USDAclean$Protein>mean(USDAclean$Protein)]=1
+USDAclean$HighProtein[USDAclean$Protein<mean(USDAclean$Protein)]=0
+USDAclean$HighSugar<-NA
+USDAclean$HighSugar[USDAclean$Sugar>mean(USDAclean$Sugar)]=1
+USDAclean$HighSugar[USDAclean$Sugar<mean(USDAclean$Sugar)]=0
+USDAclean$HighTotalFat<-NA
+USDAclean$HighTotalFat[USDAclean$TotalFat>mean(USDAclean$TotalFat)]=1
+USDAclean$HighTotalFat[USDAclean$TotalFat<mean(USDAclean$TotalFat)]=0
+
+```
+```{r}
+# 14. How many foods have both high sodium and high fat?
+nrow(USDAclean[USDAclean$HighSodium==1&USDAclean$HighTotalFat==1,])
+```
+```{r}
+# 15. Calculate the average amount of iron by high and low protein (i.e. average amount of iron in foods with high protein and average amount of iron in foods with low protein).
+aggregate(USDAclean$Iron,by=list(USDAclean$HighProtein),FUN=mean)
+```
+```{r}
+# 1. Create a visualization to illustrate the distribution of values for Total Fat, Protein and Carbohydrate.
+# There are numerous ways to visualize the distributions of the attributes e.g, histograms,density plots, box plots , bar plots etc.
+# Showing histograms and density plots underneath.
+par(mfrow=c(2,3))
+hist(USDAclean$TotalFat,xlab="Total Fat",main="Distribution of Total Fat",breaks=5)
+hist(USDAclean$Protein,xlab="Protein",main="Distribution of Protein",breaks=5)
+hist(USDAclean$Carbohydrate,xlab="Carbohydrates",main="Distribution of Carbohydrates",breaks=5)
+plot(density(USDAclean$TotalFat),main="Density of Total Fat")
+plot(density(USDAclean$Protein), main="Density of Protein")
+plot(density(USDAclean$Carbohydrate),main="Density of Carbohydrates")
+```
+```{r}
+# 2. Create a visualization to illustrate the relationship between a food's Total Fat content and its calorie content.
+plot(USDAclean$TotalFat,USDAclean$Calories,xlab="Total Fat",ylab="Calories")
+```
+```{r}
+# 3. Create a logistic regression model, using High Calories as the dependent variable, and Carbohydrate, Protein, Total Fat and Sodium as independent variables.
+fit<-glm(formula=HighCalories~Carbohydrate+Protein+TotalFat+Sodium,data=USDAclean)
+fit
+```
+```{r}
+# 4. Which independent variable is not significant?
+summary(fit)
+# Since the p-values of all the variables are lower than .05, all of them are significant.
+```
+```{r}
+# 5. Which independent variable has the strongest positive predictive power in the model?
+# Of all these independent variables Total Fat has the highest coefficient at 1.622e-02 .So Total Fat has the strongest predictive power in the model. 
+
+```
+```{r}
+# 6.Create a script for a HealthCheck function to detect unhealthy foods. Foods that are high in salt, sugar and fat fail the HealthCheck, while all other foods pass. Foods that pass the HealthCheck should be assigned a 1, while foods that fail should be assigned a 0. Use the algorithm flowchart below as a basis for this script.
+HealthCheck<-function(sodium, sugar, fat){
+  if(sodium==1) {
+    if(sugar==1) {
+      if(fat==1) {
+        result <- list(Healthcheck=0)
+      } else {
+        result <- list(Healthcheck=1) 
+      }
+    } else {
+      result <- list(Healthcheck=1)
+    }
+  } else {
+    result <- list(Healthcheck=1)
+  }
+
+  return(result)
+}
+
+```
+```{r}
+# 7. Add a new column called HealthCheck to the USDAclean data frame using the output of the function.
+for (i in 1:6310){
+  healthCheckResult<-HealthCheck(USDAclean$HighSodium[i],USDAclean$HighSugar[i],USDAclean$HighTotalFat[i]);
+  USDAclean$Healthcheck[i] = healthCheckResult;
+}
+
+```
+```{r}
+# 8. How many foods in the USDAclean data frame fail the HealthCheck?
+sum(USDAclean$Healthcheck==0)
+```
